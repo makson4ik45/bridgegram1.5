@@ -4,3 +4,5 @@ sqlalchemy
 jinja2
 itsdangerous
 requests
+email-validator
+pedantic
