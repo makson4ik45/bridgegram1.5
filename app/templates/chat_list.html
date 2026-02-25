@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Bridgegram — Чаты</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <button class="icon-btn" onclick="toggleSettings()" aria-label="Меню">☰</button>
+    <div class="title">Bridgegram</div>
+    <div style="width:24px;"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Создать чат -->
+    <input id="newUsername" placeholder="Username, например: @alex_123">
+    <button class="btn-primary" onclick="createChat()">Создать</button>
+
+    <div id="searchResult" style="margin-top:8px; font-size:14px;"></div>
+
+    <div style="margin-top:14px;"></div>
+
+    {% if chats and chats|length > 0 %}
+      {% for chat in chats %}
+        <div class="chat" onclick="openChat({{ chat.id }})">
+          <div class="chat-name">
+            {% for p in chat.participants %}
+              {% if p.username != user.username %}
+                {{ p.username }}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center; color:#64748b; margin-top:40px;">
+        У вас пока нет чатов
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Панель настроек -->
+<div class="settings-panel" id="settingsPanel" style="display:none;">
+  <h2>Настройки</h2>
+
+  <div class="me" style="margin: 12px 0; color:#111827;">
+    Вы: <b>{{ user.username }}</b><br>
+    Email: {{ user.email }}
+  </div>
+
+  <button class="btn-primary" onclick="logout()">Выйти</button>
+  <button onclick="closeSettings()" style="margin-top:10px; background:#e5e7eb; color:#111827;">
+    Закрыть
+  </button>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeSettings()" style="display:none;"></div>
+
+<script>
+/* ---------- Поиск пользователя ---------- */
+async function checkUserExists() {
+  const input = document.getElementById("newUsername");
+  const result = document.getElementById("searchResult");
+  if (!input || !result) return;
+
+  let username = input.value.trim();
+  if (!username) {
+    result.innerText = "";
+    return;
+  }
+  if (!username.startsWith("@")) username = "@" + username;
+
+  try {
+    const response = await fetch("/search-user?username=" + encodeURIComponent(username));
+    const data = await response.json();
+
+    if (data.username) {
+      result.style.color = "green";
+      result.innerText = "Пользователь найден ✅";
+    } else {
+      result.style.color = "red";
+      result.innerText = "Пользователь не найден ❌";
+    }
+  } catch {
+    result.style.color = "red";
+    result.innerText = "Ошибка соединения";
+  }
+}
+
+/* ---------- Создание чата ---------- */
+async function createChat() {
+  const input = document.getElementById("newUsername");
+  if (!input) return;
+
+  let username = input.value.trim();
+  if (!username) {
+    alert("Введите username");
+    return;
+  }
+  if (!username.startsWith("@")) username = "@" + username;
+
+  try {
+    const response = await fetch("/create-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ username })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert("Ошибка: " + (data.detail || "неизвестная ошибка"));
+      return;
+    }
+
+    location.reload();
+  } catch (e) {
+    alert("Ошибка сети: " + e);
+  }
+}
+
+/* ---------- Открытие чата ---------- */
+function openChat(chatId) {
+  window.location.href = /chat/${chatId};
+}
+
+/* ---------- Настройки ---------- */
+function toggleSettings() {
+  const panel = document.getElementById("settingsPanel");
+  const overlay = document.getElementById("overlay");
+  panel.style.display = "block";
+  overlay.style.display = "block";
+}
+function closeSettings() {
+  document.getElementById("settingsPanel").style.display = "none";
+  document.getElementById("overlay").style.display = "none";
+}
+function logout() {window.location.href = "/logout";
+}
+
+/* ---------- Слушатель ---------- */
+const u = document.getElementById("newUsername");
+if (u) u.addEventListener("input", checkUserExists);
+</script>
+
+</body>
+</html>

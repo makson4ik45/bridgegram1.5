@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Bridgegram — Вход</title>
+
+  <!-- фикс “как телефон” -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app">
+  <div class="screen">
+
+    <div class="header">
+      <div style="width:40px;"></div>
+      <div class="title">Bridgegram</div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="content">
+
+      <input id="email" type="email" placeholder="example@gmail.com">
+      <button class="btn btn-primary" onclick="sendCode()">Получить код</button>
+
+      <div id="codeBlock" class="hidden">
+        <input id="code" placeholder="Код из письма">
+        <button class="btn btn-primary" onclick="login()">Войти</button>
+
+        <button class="btn link" type="button" onclick="showRegister()">
+          Зарегистрироваться
+        </button>
+      </div>
+
+      <div id="registerBlock" class="hidden">
+        <input id="username" placeholder="@username">
+        <button class="btn btn-primary" onclick="register()">Создать аккаунт</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function showRegister() {
+  document.getElementById("registerBlock").classList.remove("hidden");
+}
+
+async function sendCode() {
+  const email = document.getElementById("email").value.trim();
+  if (!email) return alert("Введите email");
+
+  const response = await fetch("/auth/send-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ email })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (response.ok) {
+    document.getElementById("codeBlock").classList.remove("hidden");
+    alert("Код отправлен на почту");
+  } else {
+    alert(data.detail || "Ошибка отправки кода");
+  }
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const code = document.getElementById("code").value.trim();
+  if (!code) return alert("Введите код");
+
+  const response = await fetch("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ email, code })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    alert(data.detail || "Ошибка входа");
+    return;
+  }
+
+  if (data.need_register) {
+    alert("Аккаунта нет — нажмите «Зарегистрироваться» и создайте username.");
+    return;
+  }
+
+  window.location.href = "/chats";
+}
+
+async function register() {
+  const email = document.getElementById("email").value.trim();
+  const code = document.getElementById("code").value.trim();
+  let username = document.getElementById("username").value.trim();
+
+  if (!username) return alert("Введите username");
+  if (!username.startsWith("@")) username = "@" + username;
+
+  const response = await fetch("/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ email, code, username })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    alert(data.detail || "Ошибка регистрации");
+    return;
+  }
+
+  window.location.href = "/chats";
+}
+</script>
+
+</body>
+</html>

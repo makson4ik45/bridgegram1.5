@@ -1,0 +1,154 @@
+/* Reset */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root{
+  --blue1:#0aa6ff;
+  --blue2:#2f80ed;
+  --blue3:#6fd6ff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --radius: 22px;
+  --shadow: 0 18px 50px rgba(15, 23, 42, .22);
+}
+
+html, body { height: 100%; }
+
+body{
+  font-family: Arial, sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color: var(--text);
+
+  /* фон как у аватарки */
+  background:
+    radial-gradient(900px 600px at 20% 10%, rgba(111,214,255,.55), transparent 60%),
+    radial-gradient(800px 600px at 80% 25%, rgba(10,166,255,.45), transparent 60%),
+    radial-gradient(900px 700px at 60% 90%, rgba(47,128,237,.45), transparent 55%),
+    linear-gradient(135deg, #0b5ed7, #37b4ff);
+}
+
+/* Контейнер “телефона” */
+.app{
+  width: 100%;
+  max-width: 420px;
+  padding: 16px;
+}
+
+/* Экран телефона (карточка) */
+.screen{
+  height: calc(100vh - 32px);
+  max-height: 860px;                 /* чтобы на больших экранах не было слишком высоким */
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.55);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Header */
+.header{
+  height: 56px;
+  display:flex;
+  align-items:center;
+  padding: 0 12px;
+  color: white;
+  background: linear-gradient(90deg, rgba(10,166,255,.95), rgba(47,128,237,.95));
+  flex-shrink:0;
+}
+
+.title{
+  flex:1;
+  text-align:center;
+  font-weight: 800;
+  letter-spacing:.3px;
+}
+
+.icon-btn{
+  width: 40px;
+  height: 40px;
+  border:none;
+  background: transparent;
+  color: white;
+  font-size: 22px;
+  cursor:pointer;
+}
+
+/* Content */
+.content{
+  flex:1;
+  padding: 14px;
+  overflow-y:auto;
+}
+
+/* Inputs / Buttons */
+.input, input{
+  width:100%;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 14px;
+  border: 1px solid rgba(100,116,139,.35);
+  outline:none;
+  background: rgba(255,255,255,.95);
+  margin-top: 12px;
+}
+
+.input:focus, input:focus{
+  border-color: rgba(47,128,237,.7);
+  box-shadow: 0 0 0 3px rgba(47,128,237,.18);
+}
+
+.btn, button{
+  width:100%;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 14px;
+  margin-top: 12px;
+  border:none;
+  cursor:pointer;
+}
+
+.btn-primary{
+  color:white;
+  font-weight:800;
+  background: linear-gradient(90deg, var(--blue1), var(--blue2));
+}
+
+.btn-primary:hover{ filter: brightness(.97); }
+
+.link{
+  background: transparent;
+  color: var(--blue2);
+  font-weight: 800;
+}
+
+/* Helpers */
+.helper{ margin-top: 8px; font-size: 12px; color: var(--muted); }
+.empty{ text-align:center; color: var(--muted); padding: 22px 0; }
+
+/* Chat items */
+.chat{
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.85);
+  border: 1px solid rgba(148,163,184,.25);
+  margin-top: 10px;
+  cursor:pointer;
+}
+.chat:hover{ box-shadow: 0 8px 20px rgba(15,23,42,.10); }
+.chat-name{ font-weight: 900; }
+
+/* field row (input + button) */
+.field{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.field .input{ margin-top: 0; flex:1; }
+.field .btn{ margin-top: 0; width: auto; padding: 12px 16px; }
+
+/* Hidden */
+.hidden{ display:none !important; }

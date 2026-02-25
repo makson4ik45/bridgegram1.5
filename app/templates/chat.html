@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bridgegram — {{ chat.name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="/static/style.css">
+
+  <style>
+    /* если каких-то классов нет в style.css — этот блок подстрахует */
+    .messages { flex: 1; overflow-y: auto; padding: 12px; }
+    .send { display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(148,163,184,.25); background: rgba(255,255,255,.75); }
+    .send input { margin-top: 0; flex: 1; }
+    .send button { margin-top: 0; width: auto; padding: 12px 16px; border-radius: 12px; }
+    .empty { color: #64748b; text-align: center; padding: 16px; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="screen">
+
+  <!-- Header -->
+  <div class="header">
+    <button class="icon-btn" onclick="goBack()">←</button>
+    <div class="title">
+      {% for p in chat.participants %}
+        {% if p.username != user.username %}
+          {{ p.username }}
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div style="width:40px;"></div>
+  </div>
+
+  <!-- Сообщения -->
+  <div class="messages" id="messages">
+    {% for msg in chat.messages %}
+      <div class="message" data-id="{{ msg.id }}">
+        <div class="message-user">{{ msg.user.username }}</div>
+        <div class="bubble {% if msg.user_id == user.id %}me{% endif %}">
+          {{ msg.text }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Поле ввода -->
+  <div class="send">
+    <input id="messageInput" placeholder="Введите сообщение">
+    <button class="primary" onclick="sendMessage()">Отправить</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+  const chatId = {{ chat.id }};
+  const myUsername = "{{ user.username }}";
+  const myUserId = {{ user.id }};
+
+  const messagesDiv = document.getElementById("messages");
+  const input = document.getElementById("messageInput");
+  const emptyState = document.getElementById("emptyState");
+
+  // lastId берём из последнего сообщения на странице
+  let lastId = 0;
+  document.querySelectorAll(".message[data-id]").forEach(el => {
+    const id = parseInt(el.getAttribute("data-id"), 10);
+    if (id > lastId) lastId = id;
+  });
+
+  function goBack() {
+    window.location.href = "/chats";
+  }
+
+  function escapeHtml(str){
+    return str
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
+
+  function scrollToBottom(){
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function renderMessage(msg){
+    if (emptyState) emptyState.style.display = "none";
+
+    const wrap = document.createElement("div");
+    wrap.className = "message";
+    wrap.setAttribute("data-id", msg.id);
+
+    wrap.innerHTML = `
+      <div class="message-user">${escapeHtml(msg.user)}</div>
+      <div class="bubble ${msg.is_me ? 'me' : ''}">${escapeHtml(msg.text)}</div>
+    `;
+
+    messagesDiv.appendChild(wrap);
+  }
+
+  // Отправка сообщения
+  async function sendMessage(){
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.disabled = true;
+
+    try{
+      const r = await fetch(`/chat/${chatId}/send-message`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        credentials: "same-origin",
+        body: JSON.stringify({ text })
+      });
+
+      const data = await r.json();
+
+      if (!r.ok){
+        alert(data.detail || "Ошибка");
+        input.disabled = false;
+        return;
+      }
+
+      // Мгновенно показываем своё сообщение, не ждём poll
+      // Если твой backend пока не возвращает message.id — используем временный id:
+      const fakeId = lastId + 1;
+
+      renderMessage({
+        id: fakeId,
+        user: data.user || myUsername,
+        text: data.text || text,
+        is_me: true
+      });
+
+      lastId = fakeId;
+      input.value = "";
+      scrollToBottom();
+
+    } catch(e){
+      alert("Ошибка сети");
+    } finally{
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  // Подгрузка новых сообщений
+  async function pollNewMessages(){
+    try{
+      const r = await fetch(`/chat/${chatId}/messages?after_id=${lastId}`, {
+        credentials: "same-origin"
+      });
+      const data = await r.json();
+      if (!r.ok) return;
+
+      if (data.messages && data.messages.length > 0){
+        for (const m of data.messages){
+          renderMessage(m);
+          if (m.id > lastId) lastId = m.id;
+        }
+        scrollToBottom();
+      }
+    } catch(e){
+      // молча
+    }
+  }
+
+  // Enter отправляет
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  scrollToBottom();
+  setInterval(pollNewMessages, 1200);
+</script>
+
+</body>
+</html>
